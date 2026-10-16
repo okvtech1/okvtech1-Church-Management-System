@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Demo — OKV Church Management System</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="description" content="See a live walkthrough of the OKV Church Management System — members, attendance, giving, reports and more.">
+<link rel="canonical" href="https://YOUR-DOMAIN-HERE.com/demo.html">
+<meta name="robots" content="index, follow">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0b1b3a; --navy-2:#122a5c; --gold:#d4af37; --gold-2:#e8c874;
+    --bg:#f4f6fb; --card-radius:14px;
+  }
+  body{ background:var(--bg); font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; }
+  #demoRibbon{ background:#8a1f1f; color:#fff; text-align:center; padding:8px; font-size:.85rem; font-weight:600; position:sticky; top:0; z-index:1040; }
+  #sidebar{
+    width:270px; min-height:100vh; background:linear-gradient(180deg,var(--navy) 0%, var(--navy-2) 100%);
+    position:fixed; top:37px; left:0; bottom:0; overflow-y:auto; z-index:1030; transition:margin-left .25s ease;
+  }
+  #sidebar .brand{ padding:20px 20px 14px; border-bottom:1px solid rgba(255,255,255,.08); }
+  #sidebar .brand small{ color:var(--gold-2); letter-spacing:1px; font-size:.68rem; }
+  #sidebar .cat-label{ color:#8fa0c9; font-size:.7rem; text-transform:uppercase; letter-spacing:1px; padding:16px 20px 6px; }
+  #sidebar .nav-link{ color:#dbe3f5; padding:9px 20px; font-size:.92rem; border-left:3px solid transparent; display:flex; align-items:center; gap:10px; cursor:pointer; }
+  #sidebar .nav-link:hover{ background:rgba(255,255,255,.06); color:#fff; }
+  #sidebar .nav-link.active{ background:rgba(212,175,55,.14); border-left-color:var(--gold); color:var(--gold-2); font-weight:600; }
+  #sidebar .nav-link i{ font-size:1rem; width:18px; text-align:center; }
+  #main{ margin-left:270px; transition:margin-left .25s ease; }
+  #topbar{ background:#fff; border-bottom:1px solid #e6e9f2; padding:12px 24px; position:sticky; top:37px; z-index:1020; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  #content{ padding:24px; }
+  .stat-card{ border:none; border-radius:var(--card-radius); box-shadow:0 2px 10px rgba(20,30,60,.06); }
+  .stat-card .icon-wrap{ width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; color:#fff; flex:none; }
+  .module-card{ border:none; border-radius:var(--card-radius); box-shadow:0 2px 10px rgba(20,30,60,.06); }
+  .table thead th{ font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:#6b7590; border-bottom:2px solid #eef0f6; }
+  .table td, .table th{ vertical-align:middle; }
+  .btn-gold{ background:var(--gold); border-color:var(--gold); color:#241c00; font-weight:600; }
+  .btn-gold:hover{ background:var(--gold-2); border-color:var(--gold-2); color:#241c00; }
+  .btn-navy{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn-navy:hover{ background:var(--navy-2); border-color:var(--navy-2); color:#fff; }
+  .page-title{ font-weight:700; color:var(--navy); }
+  .sidebar-toggle{ display:none; }
+  .kicker{ color:var(--gold); font-weight:700; font-size:.72rem; letter-spacing:1px; text-transform:uppercase; }
+  .tab-pane{ display:none; }
+  .tab-pane.active{ display:block; }
+  .disabled-action{ opacity:.55; cursor:not-allowed; }
+  #getStartedPopup{ position:fixed; bottom:24px; right:24px; width:320px; background:#fff; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,.25); padding:22px; z-index:2000; display:none; }
+  #getStartedPopup.show{ display:block; animation:slideUp .35s ease; }
+  @keyframes slideUp{ from{ transform:translateY(20px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  @media (max-width: 991px){
+    #sidebar{ margin-left:-270px; }
+    #sidebar.show{ margin-left:0; box-shadow:0 0 40px rgba(0,0,0,.3); }
+    #main{ margin-left:0; }
+    .sidebar-toggle{ display:inline-flex; }
+    #sidebarBackdrop.show{ display:block; }
+  }
+  #sidebarBackdrop{
+    display:none; position:fixed; inset:0; background:rgba(11,27,58,.45);
+    z-index:1025; opacity:0; transition:opacity .25s ease;
+  }
+  #sidebarBackdrop.show{ opacity:1; }
+  @media (max-width: 480px){
+    #getStartedPopup{ left:14px; right:14px; width:auto; bottom:14px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="demoRibbon"><i class="bi bi-eye me-1"></i>DEMO MODE — Sample data only. Nothing you do here is saved.</div>
+
+<div id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+<nav id="sidebar">
+  <div class="brand">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-building text-white fs-4 app-logo-icon"></i>
+      <div>
+        <div class="text-white fw-bold" style="font-size:1.05rem;line-height:1.1">Grace Assembly<br>(Demo Org)</div>
+        <small>MULTI-BRANCH MODE</small>
+      </div>
+    </div>
+  </div>
+  <div class="cat-label">Overview</div>
+  <a class="nav-link active" data-tab="dashboard" onclick="showDemoTab('dashboard')"><i class="bi bi-speedometer2"></i>Dashboard</a>
+  <div class="cat-label">People</div>
+  <a class="nav-link" data-tab="members" onclick="showDemoTab('members')"><i class="bi bi-people"></i>Members</a>
+  <a class="nav-link" data-tab="families" onclick="showDemoTab('families')"><i class="bi bi-house-heart"></i>Families &amp; Households</a>
+  <a class="nav-link" data-tab="visitors" onclick="showDemoTab('visitors')"><i class="bi bi-person-plus"></i>Visitors &amp; Follow-Up</a>
+  <a class="nav-link" data-tab="attendance" onclick="showDemoTab('attendance')"><i class="bi bi-clipboard2-check"></i>Attendance</a>
+  <a class="nav-link" data-tab="membershipClasses" onclick="showDemoTab('membershipClasses')"><i class="bi bi-mortarboard"></i>Membership Classes</a>
+  <div class="cat-label">Finance</div>
+  <a class="nav-link" data-tab="tithesOfferings" onclick="showDemoTab('tithesOfferings')"><i class="bi bi-cash-coin"></i>Tithes &amp; Offerings</a>
+  <a class="nav-link" data-tab="pledges" onclick="showDemoTab('pledges')"><i class="bi bi-piggy-bank"></i>Pledges &amp; Building Fund</a>
+  <a class="nav-link" data-tab="expenses" onclick="showDemoTab('expenses')"><i class="bi bi-wallet2"></i>Expenses &amp; Budget</a>
+  <a class="nav-link" data-tab="missions" onclick="showDemoTab('missions')"><i class="bi bi-globe2"></i>Missions &amp; Missionary Support</a>
+  <div class="cat-label">Ministry</div>
+  <a class="nav-link" data-tab="events" onclick="showDemoTab('events')"><i class="bi bi-calendar-event"></i>Events &amp; Calendar</a>
+  <a class="nav-link" data-tab="ministries" onclick="showDemoTab('ministries')"><i class="bi bi-diagram-3"></i>Ministries &amp; Departments</a>
+  <a class="nav-link" data-tab="volunteers" onclick="showDemoTab('volunteers')"><i class="bi bi-hand-thumbs-up"></i>Volunteers</a>
+  <a class="nav-link" data-tab="childrenChurch" onclick="showDemoTab('childrenChurch')"><i class="bi bi-emoji-smile"></i>Children's Church</a>
+  <a class="nav-link" data-tab="youthMinistry" onclick="showDemoTab('youthMinistry')"><i class="bi bi-stars"></i>Youth Ministry</a>
+  <a class="nav-link" data-tab="smallGroups" onclick="showDemoTab('smallGroups')"><i class="bi bi-book"></i>Small Groups / Bible Study</a>
+  <a class="nav-link" data-tab="outreach" onclick="showDemoTab('outreach')"><i class="bi bi-megaphone"></i>Outreach &amp; Evangelism</a>
+  <a class="nav-link" data-tab="pastoralCare" onclick="showDemoTab('pastoralCare')"><i class="bi bi-heart"></i>Pastoral Care &amp; Prayer</a>
+  <a class="nav-link" data-tab="weddingsFunerals" onclick="showDemoTab('weddingsFunerals')"><i class="bi bi-flower1"></i>Weddings &amp; Funerals</a>
+  <a class="nav-link" data-tab="sermons" onclick="showDemoTab('sermons')"><i class="bi bi-mic"></i>Sermons &amp; Media Library</a>
+  <div class="cat-label">Operations</div>
+  <a class="nav-link" data-tab="assets" onclick="showDemoTab('assets')"><i class="bi bi-box-seam"></i>Assets &amp; Property</a>
+  <a class="nav-link" data-tab="comms" onclick="showDemoTab('comms')"><i class="bi bi-send"></i>Send Message</a>
+</nav>
+
+<div id="main">
+  <div id="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-sm btn-outline-secondary sidebar-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+      <div>
+        <div class="text-muted small">Welcome back,</div>
+        <div class="fw-semibold" style="color:var(--navy)">Demo Admin</div>
+      </div>
+    </div>
+    <div class="d-flex align-items-center flex-wrap gap-2">
+      <a href="pricing.html" class="btn btn-outline-secondary btn-sm">Pricing</a>
+      <a href="pricing.html" class="btn btn-gold btn-sm"><i class="bi bi-rocket-takeoff me-1"></i>Start Free Trial</a>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <div class="tab-pane active" id="demo-dashboard">
+      <div class="kicker">Overview</div>
+      <h4 class="page-title mb-4"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h4>
+      <div class="row g-3 mb-4" id="statCardsRow"></div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-lg-7">
+          <div class="card module-card"><div class="card-body">
+            <h6 class="fw-bold mb-3">Attendance Trend <span class="text-muted small fw-normal">(last 8 services)</span></h6>
+            <canvas id="demoAttendanceChart" height="90"></canvas>
+          </div></div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card module-card"><div class="card-body">
+            <h6 class="fw-bold mb-3">Giving This Month <span class="text-muted small fw-normal">by type</span></h6>
+            <canvas id="demoGivingChart" height="90"></canvas>
+          </div></div>
+        </div>
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-lg-7">
+          <div class="card module-card"><div class="card-body">
+            <h6 class="fw-bold mb-3">Income vs Expenses <span class="text-muted small fw-normal">(last 6 months)</span></h6>
+            <canvas id="demoIncomeExpenseChart" height="90"></canvas>
+          </div></div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card module-card"><div class="card-body">
+            <h6 class="fw-bold mb-3">Souls Won <span class="text-muted small fw-normal">(last 6 months)</span></h6>
+            <canvas id="demoSoulsWonChart" height="90"></canvas>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="card module-card">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3" style="color:var(--navy)">Recent Activity</h6>
+          <ul class="list-unstyled small text-muted mb-0">
+            <li class="mb-2"><i class="bi bi-person-plus text-success me-2"></i>Adaeze Okonkwo added as a new member — 2 hours ago</li>
+            <li class="mb-2"><i class="bi bi-cash-coin text-success me-2"></i>₦40,000 tithe recorded for Funmilayo Bello — 5 hours ago</li>
+            <li class="mb-2"><i class="bi bi-calendar-check text-success me-2"></i>Sunday 1st Service attendance recorded (214) — yesterday</li>
+          </ul>
+        </div>
+      </div>
+      <p class="text-muted small mt-4">This is sample data for demonstration. Your real dashboard fills in as you add records.</p>
+    </div>
+
+    <div class="tab-pane" id="demo-members">
+      <div class="kicker">Membership</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-people me-2"></i>Members</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real members"><i class="bi bi-plus-lg me-1"></i>Add Member</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Branch</th><th>Birthday</th><th>Anniversary</th></tr></thead>
+          <tbody id="demoMembersBody"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+        <div class="tab-pane" id="demo-families">
+      <div class="kicker">People</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-house-heart me-2"></i>Families & Households</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Family Name</th><th>Head of Family</th><th>No. of Members</th><th>Phone</th><th>Branch</th></tr></thead>
+          <tbody id="demo-families-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-visitors">
+      <div class="kicker">People</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-person-plus me-2"></i>Visitors & Follow-Up</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Full Name</th><th>Phone</th><th>Visit Date</th><th>Follow-Up Status</th></tr></thead>
+          <tbody id="demo-visitors-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-attendance">
+      <div class="kicker">People</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-clipboard2-check me-2"></i>Attendance</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Service Date</th><th>Service Type</th><th>Branch</th><th>Total Present</th></tr></thead>
+          <tbody id="demo-attendance-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-membershipClasses">
+      <div class="kicker">People</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-mortarboard me-2"></i>Membership Classes</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Member/Attendee Name</th><th>Class Type</th><th>Start Date</th><th>Status</th><th>Facilitator</th></tr></thead>
+          <tbody id="demo-membershipClasses-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-tithesOfferings">
+      <div class="kicker">Finance</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-cash-coin me-2"></i>Tithes & Offerings</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Date</th><th>Member</th><th>Type</th><th>Amount (NGN)</th><th>Branch</th></tr></thead>
+          <tbody id="demo-tithesOfferings-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-pledges">
+      <div class="kicker">Finance</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-piggy-bank me-2"></i>Pledges & Building Fund</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Pledger Name</th><th>Purpose</th><th>Amount Pledged (NGN)</th><th>Amount Paid (NGN)</th><th>Balance (NGN)</th><th>Due Date</th></tr></thead>
+          <tbody id="demo-pledges-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-expenses">
+      <div class="kicker">Finance</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-wallet2 me-2"></i>Expenses & Budget</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount (NGN)</th><th>Branch</th></tr></thead>
+          <tbody id="demo-expenses-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-missions">
+      <div class="kicker">Finance</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-globe2 me-2"></i>Missions & Missionary Support</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Missionary Name</th><th>Mission Field</th><th>Support Type</th><th>Amount (NGN)</th><th>Last Support Date</th></tr></thead>
+          <tbody id="demo-missions-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-events">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-calendar-event me-2"></i>Events & Calendar</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Event Title</th><th>Date</th><th>Location</th><th>Category</th></tr></thead>
+          <tbody id="demo-events-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-ministries">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-diagram-3 me-2"></i>Ministries & Departments</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Ministry Name</th><th>Type</th><th>Leader</th><th>Focus Area</th><th>No. of Members</th></tr></thead>
+          <tbody id="demo-ministries-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-volunteers">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-hand-thumbs-up me-2"></i>Volunteers</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Full Name</th><th>Ministry</th><th>Role</th><th>Status</th></tr></thead>
+          <tbody id="demo-volunteers-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-childrenChurch">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-emoji-smile me-2"></i>Children's Church</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Child's Name</th><th>Age</th><th>Class</th><th>Parent's Name</th><th>Parent's Phone</th></tr></thead>
+          <tbody id="demo-childrenChurch-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-youthMinistry">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-stars me-2"></i>Youth Ministry</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Full Name</th><th>Age</th><th>Phone</th><th>Program</th></tr></thead>
+          <tbody id="demo-youthMinistry-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-smallGroups">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-book me-2"></i>Small Groups / Bible Study</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Group Name</th><th>Leader</th><th>Meeting Day</th><th>No. of Members</th></tr></thead>
+          <tbody id="demo-smallGroups-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-outreach">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-megaphone me-2"></i>Outreach & Evangelism</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Program Name</th><th>Date</th><th>Location</th><th>Souls Won</th></tr></thead>
+          <tbody id="demo-outreach-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-pastoralCare">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-heart me-2"></i>Pastoral Care & Prayer</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Requester Name</th><th>Type</th><th>Status</th><th>Date Requested</th></tr></thead>
+          <tbody id="demo-pastoralCare-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-weddingsFunerals">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-flower1 me-2"></i>Weddings & Funerals</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Type</th><th>Names Involved</th><th>Date</th><th>Officiating Minister</th><th>Location</th></tr></thead>
+          <tbody id="demo-weddingsFunerals-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-sermons">
+      <div class="kicker">Ministry</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-mic me-2"></i>Sermons & Media Library</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Sermon Title</th><th>Speaker</th><th>Date</th><th>Series</th></tr></thead>
+          <tbody id="demo-sermons-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-assets">
+      <div class="kicker">Operations</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h4 class="page-title mb-0"><i class="bi bi-box-seam me-2"></i>Assets & Property</h4>
+        <button class="btn btn-gold btn-sm disabled-action" title="Sign up to add real records"><i class="bi bi-plus-lg me-1"></i>Add</button>
+      </div>
+      <div class="card module-card"><div class="card-body p-0">
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Asset Name</th><th>Category</th><th>Quantity</th><th>Condition</th><th>Estimated Value (NGN)</th></tr></thead>
+          <tbody id="demo-assets-Body"></tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    <div class="tab-pane" id="demo-comms">
+      <div class="kicker">Communication</div>
+      <h4 class="page-title mb-3"><i class="bi bi-send me-2"></i>Send Message</h4>
+      <div class="card module-card"><div class="card-body">
+        <p class="text-muted">Send announcements, or personalized birthday and anniversary messages, to one member or your whole church at once — by Email, SMS or WhatsApp.</p>
+        <div class="row g-3 disabled-action" title="Sign up to send real messages">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Message Type</label>
+            <select class="form-select" disabled><option>Birthday</option></select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Send Via</label>
+            <div class="d-flex gap-3 pt-2"><span class="badge bg-light text-dark border">Email</span><span class="badge bg-light text-dark border">SMS</span><span class="badge bg-light text-dark border">WhatsApp</span></div>
+          </div>
+        </div>
+        <a href="pricing.html" class="btn btn-gold btn-sm mt-3">Sign Up to Unlock</a>
+      </div></div>
+    </div>
+
+  </div>
+  <footer class="text-center text-muted small py-3">
+    Demo data only &middot; <span class="app-name-text">OKV Church Management System</span>
+    <div class="mt-1"><i class="bi bi-envelope me-1"></i><span class="contact-email-text">technologyokv@gmail.com</span> &nbsp;&middot;&nbsp; <i class="bi bi-telephone me-1"></i><span class="contact-phone-text">+2348104141138</span> &nbsp;&middot;&nbsp; <i class="bi bi-globe me-1"></i><span class="contact-website-text">www.okvtechnology.com</span></div>
+    <div class="mt-1"><a href="privacy-policy.html">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="terms-of-service.html">Terms of Service</a> &nbsp;&middot;&nbsp; <a href="refund-policy.html">Refund Policy</a></div>
+  </footer>
+</div>
+
+<!-- Get Started popup -->
+<div id="getStartedPopup">
+  <button class="btn-close float-end" onclick="closeGetStartedPopup()"></button>
+  <i class="bi bi-rocket-takeoff" style="font-size:1.8rem;color:var(--gold)"></i>
+  <h6 class="fw-bold mt-2 mb-1" style="color:var(--navy)">Like what you see?</h6>
+  <p class="small text-muted mb-3">Get your own church set up in minutes, with a free 7-day trial.</p>
+  <a href="pricing.html" class="btn btn-gold w-100 btn-sm">Get Started Now</a>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="common.js"></script>
+<script>
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('show');
+  document.getElementById('sidebarBackdrop').classList.toggle('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('show');
+  document.getElementById('sidebarBackdrop').classList.remove('show');
+}
+function showDemoTab(name){
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('demo-'+name).classList.add('active');
+  document.querySelectorAll('#sidebar .nav-link').forEach(a => a.classList.toggle('active', a.dataset.tab === name));
+  closeSidebar();
+}
+
+function statCard(icon,color,label,value,sub){
+  return `<div class="col-sm-6 col-xl-3">
+    <div class="card stat-card h-100">
+      <div class="card-body d-flex align-items-start gap-3">
+        <div class="icon-wrap" style="background:${color}"><i class="bi ${icon}"></i></div>
+        <div>
+          <div class="text-muted small">${label}</div>
+          <div class="fs-4 fw-bold" style="color:var(--navy)">${value}</div>
+          <div class="text-muted" style="font-size:.75rem">${sub}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+document.getElementById('statCardsRow').innerHTML =
+  statCard('bi-people','#0b1b3a','Total Members','412','across 2 branches') +
+  statCard('bi-cash-coin','#1b7a43','This Month\'s Giving','&#8358;1.8M','tithes &amp; offerings') +
+  statCard('bi-calendar-check','#a9832a','Sunday Attendance','356','last service') +
+  statCard('bi-diagram-3','#6a3fa0','Active Ministries','8','departments running');
+
+/* Dashboard charts — same look as the real app's Dashboard tab (buildChart()),
+   just fed static sample numbers since this is a no-login demo. */
+function buildDemoChart(canvasId, type, labels, datasets, horizontal){
+  if(typeof Chart === 'undefined') return;
+  const ctx = document.getElementById(canvasId);
+  if(!ctx) return;
+  new Chart(ctx, {
+    type, data:{labels, datasets},
+    options:{ indexAxis: horizontal?'y':'x',
+      plugins:{legend:{display: type==='doughnut'||type==='pie'||datasets.length>1}},
+      scales: (type==='doughnut'||type==='pie')?{}:{y:{beginAtZero:true}} }
+  });
+}
+buildDemoChart('demoAttendanceChart', 'bar',
+  ['Jun 28','Jul 5','Jul 12','Jul 19','Jul 26','Aug 2','Aug 9','Aug 16'],
+  [{label:'Present', data:[298,312,305,330,341,338,356,349], backgroundColor:'#0b1b3a'}]);
+buildDemoChart('demoGivingChart', 'doughnut', ['Tithe','Offering','Pledge','Seed','Welfare'],
+  [{data:[1150000,380000,200000,70000,40000], backgroundColor:['#0b1b3a','#d4af37','#6a3fa0','#1f7a4d','#8a1c2b']}]);
+buildDemoChart('demoIncomeExpenseChart', 'line', ['Mar','Apr','May','Jun','Jul','Aug'],
+  [{label:'Income', data:[1420000,1510000,1390000,1680000,1750000,1800000], borderColor:'#1f7a4d', backgroundColor:'#1f7a4d', fill:false},
+   {label:'Expenses', data:[610000,590000,640000,700000,655000,690000], borderColor:'#8a1c2b', backgroundColor:'#8a1c2b', fill:false}]);
+buildDemoChart('demoSoulsWonChart', 'line', ['Mar','Apr','May','Jun','Jul','Aug'],
+  [{label:'Souls Won', data:[14,19,22,17,26,23], borderColor:'#a9832a', backgroundColor:'#a9832a', fill:false}]);
+
+const DEMO_MEMBERS = [
+  ['Adaeze Okonkwo','adaeze.okonkwo@example.com','0803 220 1145','Ikeja HQ','1990-04-12','2015-06-20'],
+  ['Chinedu Eze','chinedu.eze@example.com','0805 112 4478','Ikeja HQ','1985-11-02','—'],
+  ['Funmilayo Bello','funmilayo.bello@example.com','0812 990 3321','Lekki Branch','1992-07-25','2018-09-14'],
+  ['Emmanuel Udo','emmanuel.udo@example.com','0701 556 7788','Ikeja HQ','2005-03-30','—'],
+  ['Blessing Nwosu','blessing.nwosu@example.com','0906 223 1190','Lekki Branch','1988-01-19','2020-12-05'],
+];
+document.getElementById('demoMembersBody').innerHTML = DEMO_MEMBERS.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
+
+/* Every other module tab (Families through Assets) — same sample-data,
+   client-side-only rendering pattern as Members/Dashboard above. */
+const DEMO_Families = [["The Okonkwo Family","Adaeze Okonkwo","4","0803 220 1145","Ikeja HQ"],["The Bello Family","Funmilayo Bello","6","0812 990 3321","Lekki Branch"],["The Eze Family","Chinedu Eze","3","0805 112 4478","Ikeja HQ"]];
+document.getElementById('demo-families-Body').innerHTML = DEMO_Families.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_Visitors = [["Ifeoma Chukwu","0708 552 9012","2026-08-24","Contacted"],["Tunde Bakare","0902 447 1183","2026-08-17","Pending"],["Grace Effiong","0815 663 2290","2026-08-10","Converted"]];
+document.getElementById('demo-visitors-Body').innerHTML = DEMO_Visitors.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_Attendance = [["2026-08-09","Sunday Service","Ikeja HQ","214"],["2026-08-09","Sunday Service","Lekki Branch","142"],["2026-08-06","Midweek Service","Ikeja HQ","88"]];
+document.getElementById('demo-attendance-Body').innerHTML = DEMO_Attendance.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_MembershipClasses = [["Emmanuel Udo","New Converts Class","2026-08-02","Ongoing","Pastor Samuel Adeyemi"],["Blessing Nwosu","Water Baptism","2026-07-19","Completed","Deacon Paul"],["Ifeoma Chukwu","Foundation Class","2026-08-24","Ongoing","Sister Grace"]];
+document.getElementById('demo-membershipClasses-Body').innerHTML = DEMO_MembershipClasses.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_TithesOfferings = [["2026-08-09","Adaeze Okonkwo","Tithe","\u20a625,000","Ikeja HQ"],["2026-08-09","Chinedu Eze","Offering","\u20a68,500","Ikeja HQ"],["2026-08-02","Funmilayo Bello","Tithe","\u20a640,000","Lekki Branch"]];
+document.getElementById('demo-tithesOfferings-Body').innerHTML = DEMO_TithesOfferings.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_Pledges = [["Funmilayo Bello","Building Fund","\u20a6500,000","\u20a6300,000","\u20a6200,000","2026-12-31"],["Emmanuel Udo","Missions","\u20a6150,000","\u20a6150,000","\u20a60","2026-09-30"],["Chinedu Eze","Equipment","\u20a680,000","\u20a620,000","\u20a660,000","2026-10-15"]];
+document.getElementById('demo-pledges-Body').innerHTML = DEMO_Pledges.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
+const DEMO_Expenses = [["2026-08-05","Utilities","Generator diesel","\u20a645,000","Ikeja HQ"],["2026-08-11","Maintenance","Sound system repair","\u20a660,000","Lekki Branch"],["2026-08-01","Welfare","Widows welfare package","\u20a630,000","Ikeja HQ"]];
+document.getElementById('demo-expenses-Body').innerHTML = DEMO_Expenses.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_Missions = [["Rev. David Ogunleye","Northern Nigeria","Monthly Support","\u20a650,000","2026-08-01"],["Sister Joy Amadi","Republic of Benin","Monthly Support","\u20a635,000","2026-08-01"],["Pastor Michael Osei","Northern Ghana","Project","\u20a6200,000","2026-06-15"]];
+document.getElementById('demo-missions-Body').innerHTML = DEMO_Missions.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_Events = [["Annual Thanksgiving Service","2026-11-01","Main Auditorium, Ikeja HQ","Service"],["Youth Conference 2026","2026-09-19","Lekki Branch","Youth"],["Emmanuel Udo & Chioma \u2014 Wedding","2026-10-10","Main Auditorium, Ikeja HQ","Wedding"]];
+document.getElementById('demo-events-Body').innerHTML = DEMO_Events.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_Ministries = [["Choir","Ministry","Sister Grace","Choir","24"],["Ushering","Ministry","Deacon Paul","Ushering","18"],["Finance Department","Department","Bro. Emeka","Finance","5"]];
+document.getElementById('demo-ministries-Body').innerHTML = DEMO_Ministries.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_Volunteers = [["Blessing Nwosu","Choir","Alto Lead","Active"],["Tunde Bakare","Ushering","Usher","Active"],["Grace Effiong","Media & Sound","Camera Operator","Active"]];
+document.getElementById('demo-volunteers-Body').innerHTML = DEMO_Volunteers.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_ChildrenChurch = [["David Okonkwo","7","Primary","Adaeze Okonkwo","0803 220 1145"],["Faith Bello","4","Toddlers","Funmilayo Bello","0812 990 3321"],["Samuel Eze","10","Junior","Chinedu Eze","0805 112 4478"]];
+document.getElementById('demo-childrenChurch-Body').innerHTML = DEMO_ChildrenChurch.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_YouthMinistry = [["Emmanuel Udo","19","0701 556 7788","Media"],["Ifeoma Chukwu","22","0708 552 9012","Choir"],["Tunde Bakare","24","0902 447 1183","Drama"]];
+document.getElementById('demo-youthMinistry-Body').innerHTML = DEMO_YouthMinistry.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_SmallGroups = [["Ikeja Fellowship Cell","Bro. Emeka","Wednesday","14"],["Lekki Young Adults Bible Study","Sister Ada","Thursday","11"],["Prayer Warriors Cell","Deacon Paul","Tuesday","9"]];
+document.getElementById('demo-smallGroups-Body').innerHTML = DEMO_SmallGroups.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_Outreach = [["Street Evangelism \u2014 Ikeja Market","2026-08-15","Ikeja Market","23"],["Lekki Beach Outreach","2026-07-27","Lekki Beach","17"],["Hospital Visitation Outreach","2026-08-20","General Hospital, Ikeja","6"]];
+document.getElementById('demo-outreach-Body').innerHTML = DEMO_Outreach.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_PastoralCare = [["Blessing Nwosu","Hospital Visit","In Progress","2026-08-22"],["Emmanuel Udo","Counseling","Open","2026-08-25"],["Grace Effiong","Prayer Request","Resolved","2026-08-12"]];
+document.getElementById('demo-pastoralCare-Body').innerHTML = DEMO_PastoralCare.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_WeddingsFunerals = [["Wedding","Emmanuel Udo & Chioma Nnamdi","2026-10-10","Pastor Samuel Adeyemi","Main Auditorium, Ikeja HQ"],["Funeral","Late Elder Joseph Bello","2026-08-18","Pastor Samuel Adeyemi","Ikeja HQ"],["Naming Ceremony","Baby Faith Bello","2026-08-30","Deacon Paul","Lekki Branch"]];
+document.getElementById('demo-weddingsFunerals-Body').innerHTML = DEMO_WeddingsFunerals.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+const DEMO_Sermons = [["Walking in Faith","Pastor Samuel Adeyemi","2026-08-23","Faith Series"],["The Power of Gratitude","Pastor Samuel Adeyemi","2026-08-16","Faith Series"],["Building Strong Families","Rev. David Ogunleye","2026-08-09","Family Life"]];
+document.getElementById('demo-sermons-Body').innerHTML = DEMO_Sermons.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+const DEMO_Assets = [["Church Bus (Toyota Hiace)","Vehicle","1","Good","\u20a68,500,000"],["PA Sound System","Electronics","1","Good","\u20a62,200,000"],["Plastic Chairs","Furniture","450","Fair","\u20a61,350,000"]];
+document.getElementById('demo-assets-Body').innerHTML = DEMO_Assets.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+
+function closeGetStartedPopup(){ document.getElementById('getStartedPopup').classList.remove('show'); }
+setTimeout(() => { document.getElementById('getStartedPopup').classList.add('show'); }, 8000);
+
+/* Pull live branding/contact from the Super Admin's settings, same as
+   every other page — falls back to the defaults already in the page if
+   offline or not yet configured. Uses the shared api() helper from
+   common.js, so API_BASE_URL only ever needs to be set in one place. */
+async function loadLiveBranding(){
+  try{
+    const data = await api('publicSettings', {});
+    if(data.error || !data.settings) return;
+    const s = data.settings;
+    if(s.branding){
+      document.documentElement.style.setProperty('--navy', s.branding.primaryColor || '#0b1b3a');
+      document.documentElement.style.setProperty('--gold', s.branding.accentColor || '#d4af37');
+      document.querySelectorAll('.app-name-text').forEach(el => el.textContent = s.branding.appName);
+      if(s.branding.logoBase64){
+        document.querySelectorAll('.app-logo-icon').forEach(el => {
+          if(el.tagName === 'IMG'){
+            el.src = s.branding.logoBase64;
+          } else {
+            const img = document.createElement('img');
+            img.src = s.branding.logoBase64; img.alt = 'Logo';
+            img.className = 'app-logo-icon';
+            img.style.cssText = 'height:1.6em;width:auto;vertical-align:-.3em;border-radius:6px;';
+            el.replaceWith(img);
+          }
+        });
+      }
+    }
+    if(s.contact){
+      document.querySelectorAll('.contact-email-text').forEach(el => el.textContent = s.contact.email);
+      document.querySelectorAll('.contact-phone-text').forEach(el => el.textContent = s.contact.phone);
+      document.querySelectorAll('.contact-website-text').forEach(el => el.textContent = s.contact.website);
+    }
+  }catch(err){ /* offline or not configured yet — page already shows sensible defaults */ }
+}
+loadLiveBranding();
+</script>
+</body>
+</html>
